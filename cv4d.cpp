@@ -11,7 +11,7 @@
 
 using PByte = unsigned char*;
 
-// WideChar to std::string
+// PChar(PWideChar) to std::string
 static std::string WStringToUtf8(const wchar_t* wstr)
 {
     if (!wstr) return std::string();
