@@ -10,6 +10,8 @@
 
 interface
 
+uses Winapi.Windows;
+
 type
   { Mat 矩阵类的接口 }
   OcvMat = class
