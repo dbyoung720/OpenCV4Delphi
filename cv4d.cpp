@@ -301,52 +301,22 @@ public:
 extern "C"
 {
     // ==================== OcvMat ====================
-    __declspec(dllexport) OcvMat* __cdecl CreateOcvMat(int rows, int cols, int type)
-    {
-        return new OcvMat(rows, cols, type);
-    }
-    __declspec(dllexport) void __cdecl DestroyOcvMat(OcvMat* p)
-    {
-        if (p) p->DestroySelf();
-    }
+    __declspec(dllexport) OcvMat* __cdecl CreateOcvMat(int rows, int cols, int type) { return new OcvMat(rows, cols, type); }
+    __declspec(dllexport) void __cdecl DestroyOcvMat(OcvMat* p)                      { if (p) p->DestroySelf();             }
 
     // ==================== OcvContours  ====================
-    __declspec(dllexport) void __cdecl DestroyOcvContours(OcvContours* p)
-    {
-        if (p) p->DestroySelf();
-    }
+    __declspec(dllexport) void __cdecl DestroyOcvContours(OcvContours* p)   { if (p) p->DestroySelf();   }
 
     // ==================== OcvImgCodecs ====================
-    __declspec(dllexport) OcvImgCodecs* __cdecl CreateOcvImgCodecs()
-    {
-        return new OcvImgCodecs();
-    }
-    __declspec(dllexport) void __cdecl DestroyOcvImgCodecs(OcvImgCodecs* p)
-    {
-        if (p) p->DestroySelf();
-    }
+    __declspec(dllexport) OcvImgCodecs* __cdecl CreateOcvImgCodecs()        { return new OcvImgCodecs(); }
+    __declspec(dllexport) void __cdecl DestroyOcvImgCodecs(OcvImgCodecs* p) { if (p) p->DestroySelf();   }
 	
     // ==================== OcvImgProc ====================
-    __declspec(dllexport) OcvImgProc* __cdecl CreateOcvImgProc()
-    {
-        return new OcvImgProc();
-    }
-    __declspec(dllexport) void __cdecl DestroyOcvImgProc(OcvImgProc* p)
-    {
-        if (p) p->DestroySelf();
-    }
+    __declspec(dllexport) OcvImgProc* __cdecl CreateOcvImgProc()            { return new OcvImgProc();   }
+    __declspec(dllexport) void __cdecl DestroyOcvImgProc(OcvImgProc* p)     { if (p) p->DestroySelf();   }
     
     // ==================== OcvCore ====================
-    __declspec(dllexport) OcvCore* __cdecl CreateOcvCore()
-    {
-        return new OcvCore();
-    }
-    __declspec(dllexport) void __cdecl DestroyOcvCore(OcvCore* p)
-    {
-        if (p) p->DestroySelf();
-    }
-    __declspec(dllexport) void __cdecl FreeOcvBuffer(PByte buf)
-    {
-        delete[] buf;
-    }
+    __declspec(dllexport) OcvCore* __cdecl CreateOcvCore()                  { return new OcvCore();      }
+    __declspec(dllexport) void __cdecl DestroyOcvCore(OcvCore* p)           { if (p) p->DestroySelf();   }
+    __declspec(dllexport) void __cdecl FreeOcvBuffer(PByte buf)             { delete[] buf;              }
 }
