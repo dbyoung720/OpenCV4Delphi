@@ -3,15 +3,29 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/geometry.hpp>
+#include <opencv2/photo.hpp>
+#include <opencv2/xphoto.hpp>
 #include <windows.h>
 #include <fstream>
 #include <string>
 #include <vector>
 #include <cstring>
 
+#pragma comment(lib, "opencv_core5.lib")    
+#pragma comment(lib, "opencv_imgcodecs5.lib") 
+#pragma comment(lib, "opencv_imgproc5.lib") 
+#pragma comment(lib, "opencv_geometry5.lib") 
+#pragma comment(lib, "opencv_videoio5.lib") 
+#pragma comment(lib, "opencv_photo5.lib")   
+#pragma comment(lib, "opencv_highgui5.lib") 
+#pragma comment(lib, "opencv_xphoto5.lib")
+
+// ====================================================
+// 注：本模块仅处理 4 通道 BGRA 图像；输入限定为：CV_8UC4；
+// ====================================================
+
 using PByte = unsigned char*;
 
-// PChar(PWideChar) to std::string
 static std::string WStringToUtf8(const wchar_t* wstr)
 {
     if (!wstr) return std::string();
@@ -22,7 +36,6 @@ static std::string WStringToUtf8(const wchar_t* wstr)
     return str;
 }
 
-// ==================== OcvMat ====================
 class OcvMat
 {
 public:
@@ -44,7 +57,6 @@ private:
     cv::Mat mat;
 };
 
-// ==================== OcvContours ====================
 class OcvContours
 {
 public:
@@ -83,8 +95,7 @@ public:
         const auto& pts = contours_[idx];
         int n = (int)pts.size();
         if (n > maxCount) n = maxCount;
-        if (outPoints && n > 0)
-            std::memcpy(outPoints, pts.data(), (size_t)n * sizeof(cv::Point));
+        if (outPoints && n > 0) std::memcpy(outPoints, pts.data(), (size_t)n * sizeof(cv::Point));
         return n;
     }
 
@@ -106,7 +117,6 @@ private:
     std::vector<std::vector<cv::Point>> contours_;
 };
 
-// ==================== OcvImgCodecs ====================
 class OcvImgCodecs
 {
 public:
@@ -138,13 +148,12 @@ public:
     void __cdecl DestroySelf() { delete this; }
 };
 
-// ==================== OcvImgProc ====================
 class OcvImgProc
 {
 public:
     OcvImgProc() {}
 
-    // 高斯模糊；ksize 会被强制为奇数
+    // 高斯滤波；ksize 会被强制为奇数
     virtual OcvMat* __cdecl GaussianBlur(OcvMat* src, int ksize, double sigmaX)
     {
         if (!src || src->Native().empty() || ksize <= 0) return nullptr;
@@ -154,6 +163,74 @@ public:
         return Wrap(dst);
     }
 
+    // 均值滤波; ksize 为边长，内部按 (ksize, ksize) 方窗处理
+    virtual OcvMat* __cdecl Blur(OcvMat* src, int ksize)
+    {
+        if (!src || src->Native().empty()) return nullptr;
+        const cv::Mat& m = src->Native();
+        if (m.type() != CV_8UC4) return nullptr;
+        if (ksize <= 0) ksize = 3;
+    
+        cv::Mat dst;
+        cv::blur(m, dst, cv::Size(ksize, ksize));
+        return Wrap(dst);
+    }
+    
+    // 方框滤波; normalize=true 时等价于均值滤波；false 时为非归一化方框滤波
+    virtual OcvMat* __cdecl BoxFilter(OcvMat* src, int ksize, bool normalize)
+    {
+        if (!src || src->Native().empty()) return nullptr;
+        const cv::Mat& m = src->Native();
+        if (m.type() != CV_8UC4) return nullptr;
+        if (ksize <= 0) ksize = 3;
+    
+        cv::Mat dst;
+        cv::boxFilter(m, dst, -1, cv::Size(ksize, ksize), cv::Point(-1, -1), normalize);
+        return Wrap(dst);
+    }
+    
+    // 中值滤波; ksize 必须为大于 1 的奇数（3、5、7、9...）
+    virtual OcvMat* __cdecl MedianBlur(OcvMat* src, int ksize)
+    {
+        if (!src || src->Native().empty()) return nullptr;
+        const cv::Mat& m = src->Native();
+        if (m.type() != CV_8UC4) return nullptr;
+        if (ksize <= 1) ksize = 3;
+        ksize |= 1;   // 强制奇数
+    
+        cv::Mat dst;
+        cv::medianBlur(m, dst, ksize);
+        return Wrap(dst);
+    }
+
+    // BilateralFilter 滤波
+    virtual OcvMat* __cdecl BilateralFilter(OcvMat* src, int d, double sigmaColor, double sigmaSpace)
+    {
+        if (!src || src->Native().empty()) return nullptr;
+        const cv::Mat& m = src->Native();
+        if (m.type() != CV_8UC4) return nullptr;
+        if (d < 0) d = 9;
+        if (sigmaColor <= 0) sigmaColor = 75.0;
+        if (sigmaSpace <= 0) sigmaSpace = 75.0;
+
+        std::vector<cv::Mat> bgra;
+        cv::split(m, bgra);
+        std::vector<cv::Mat> bgr = { bgra[0], bgra[1], bgra[2] };
+        cv::Mat bgrMat;
+        cv::merge(bgr, bgrMat);
+
+        cv::Mat bgrDenoised;
+        cv::bilateralFilter(bgrMat, bgrDenoised, d, sigmaColor, sigmaSpace);
+
+        std::vector<cv::Mat> dbgr;
+        cv::split(bgrDenoised, dbgr);
+        dbgr.push_back(bgra[3]);
+
+        cv::Mat denoised;
+        cv::merge(dbgr, denoised);
+        return Wrap(denoised);
+    }
+	
     // 色彩空间转换；常用 code：COLOR_BGR2HSV=40、COLOR_BGR2GRAY=6
     virtual OcvMat* __cdecl CvtColor(OcvMat* src, int code)
     {
@@ -218,6 +295,123 @@ public:
 
     void __cdecl DestroySelf() { delete this; }
 
+	private:
+    static OcvMat* Wrap(const cv::Mat& m)
+    {
+        OcvMat* p = new OcvMat(m.rows, m.cols, m.type());
+        m.copyTo(p->Native());
+        return p;
+    }
+};
+
+class OcvPhoto
+{
+public:
+    OcvPhoto() {}
+
+    // 非局部均值去噪（彩色）
+    virtual OcvMat* __cdecl FastNlMeansDenoisingColored(OcvMat* src, double h, double hColor, int templateWindowSize, int searchWindowSize)
+    {
+        if (!src || src->Native().empty()) return nullptr;
+        const cv::Mat& m = src->Native();
+        if (m.type() != CV_8UC4) return nullptr;
+
+        if (h <= 0) h = 3.0;
+        if (hColor <= 0) hColor = 3.0;
+        if (templateWindowSize <= 0) templateWindowSize = 7;
+        if (searchWindowSize <= 0) searchWindowSize = 21;
+        templateWindowSize |= 1;
+        searchWindowSize |= 1;
+
+        std::vector<cv::Mat> bgra;
+        cv::split(m, bgra);                       
+
+        std::vector<cv::Mat> bgr = { bgra[0], bgra[1], bgra[2] };
+        cv::Mat bgrMat;
+        cv::merge(bgr, bgrMat);
+
+        cv::Mat bgrDenoised;
+        cv::fastNlMeansDenoisingColored(bgrMat, bgrDenoised, (float)h, (float)hColor, templateWindowSize, searchWindowSize);
+
+        std::vector<cv::Mat> dbgr;
+        cv::split(bgrDenoised, dbgr);
+        dbgr.push_back(bgra[3]);     
+
+        cv::Mat denoised;
+        cv::merge(dbgr, denoised);
+        return Wrap(denoised);
+    }
+
+    // 适用于已转为单通道的掩码图或特定处理链，内部拆出单通道处理后再合并 Alpha
+    virtual OcvMat* __cdecl FastNlMeansDenoising(OcvMat* src, double h, int templateWindowSize, int searchWindowSize)
+    {
+        if (!src || src->Native().empty()) return nullptr;
+        const cv::Mat& m = src->Native();
+        if (m.type() != CV_8UC4) return nullptr;
+    
+        if (h <= 0) h = 3.0;
+        if (templateWindowSize <= 0) templateWindowSize = 7;
+        if (searchWindowSize <= 0) searchWindowSize = 21;
+        templateWindowSize |= 1;
+        searchWindowSize |= 1;
+    
+        std::vector<cv::Mat> bgra;
+        cv::split(m, bgra); 
+    
+        std::vector<cv::Mat> bgr = { bgra[0], bgra[1], bgra[2] };
+        cv::Mat bgrMat;
+        cv::merge(bgr, bgrMat);
+    
+        cv::Mat bgrDenoised;
+        cv::fastNlMeansDenoising(bgrMat, bgrDenoised, (float)h, templateWindowSize, searchWindowSize);
+    
+        std::vector<cv::Mat> dbgr;
+        cv::split(bgrDenoised, dbgr);
+        dbgr.push_back(bgra[3]); 
+    
+        cv::Mat denoised;
+        cv::merge(dbgr, denoised);
+        return Wrap(denoised);
+    }
+
+     // denoise_TVL1 接受 std::vector<Mat> 作为输入，单图场景下传单元素向量即可。该算法直接输出结果，无需通道拆分
+     virtual OcvMat* __cdecl DenoiseTVL1(OcvMat* src, double lambda, int niters)
+     {
+         if (!src || src->Native().empty()) return nullptr;
+         if (src->Native().type() != CV_8UC4) return nullptr;
+         if (lambda <= 0) lambda = 1.0;
+         if (niters <= 0) niters = 30;
+     
+         std::vector<cv::Mat> observations = { src->Native() };
+         cv::Mat result;
+         cv::denoise_TVL1(observations, result, lambda, niters);
+         return Wrap(result);
+     }
+
+     // Block-Matching 3D，质量极高但较慢
+     virtual OcvMat* __cdecl BM3DDenoising(OcvMat* src)
+     {
+         if (!src || src->Native().empty()) return nullptr;
+         if (src->Native().type() != CV_8UC4) return nullptr;
+     
+         cv::Mat bgr, denoised;
+         cv::cvtColor(src->Native(), bgr, cv::COLOR_BGRA2BGR);
+         cv::xphoto::bm3dDenoising(bgr, denoised);
+     
+         // 合并 Alpha
+         std::vector<cv::Mat> bgra;
+         cv::split(src->Native(), bgra);
+         std::vector<cv::Mat> dbgr;
+         cv::split(denoised, dbgr);
+         dbgr.push_back(bgra[3]);
+     
+         cv::Mat result;
+         cv::merge(dbgr, result);
+         return Wrap(result);
+     }
+
+    void __cdecl DestroySelf() { delete this; }
+
 private:
     static OcvMat* Wrap(const cv::Mat& m)
     {
@@ -227,7 +421,6 @@ private:
     }
 };
 
-// ==================== OcvCore ====================
 class OcvCore
 {
 public:
@@ -297,25 +490,29 @@ public:
     void __cdecl DestroySelf() { delete this; }
 };
 
-// ==================== export function ====================
+// ==================== export function ===================
 extern "C"
 {
-    // ==================== OcvMat ====================
+    // ==================== OcvMat ========================
     __declspec(dllexport) OcvMat* __cdecl CreateOcvMat(int rows, int cols, int type) { return new OcvMat(rows, cols, type); }
     __declspec(dllexport) void __cdecl DestroyOcvMat(OcvMat* p)                      { if (p) p->DestroySelf();             }
 
-    // ==================== OcvContours  ====================
+    // ==================== OcvContours  ==================
     __declspec(dllexport) void __cdecl DestroyOcvContours(OcvContours* p)   { if (p) p->DestroySelf();   }
 
-    // ==================== OcvImgCodecs ====================
+    // ==================== OcvImgCodecs ==================
     __declspec(dllexport) OcvImgCodecs* __cdecl CreateOcvImgCodecs()        { return new OcvImgCodecs(); }
     __declspec(dllexport) void __cdecl DestroyOcvImgCodecs(OcvImgCodecs* p) { if (p) p->DestroySelf();   }
 	
     // ==================== OcvImgProc ====================
     __declspec(dllexport) OcvImgProc* __cdecl CreateOcvImgProc()            { return new OcvImgProc();   }
     __declspec(dllexport) void __cdecl DestroyOcvImgProc(OcvImgProc* p)     { if (p) p->DestroySelf();   }
-    
-    // ==================== OcvCore ====================
+
+    // ==================== OcvPhoto ======================
+    __declspec(dllexport) OcvPhoto* __cdecl CreateOcvPhoto()                { return new OcvPhoto();     }
+    __declspec(dllexport) void __cdecl DestroyOcvPhoto(OcvPhoto* p)         { if (p) p->DestroySelf();   }
+
+    // ==================== OcvCore =======================
     __declspec(dllexport) OcvCore* __cdecl CreateOcvCore()                  { return new OcvCore();      }
     __declspec(dllexport) void __cdecl DestroyOcvCore(OcvCore* p)           { if (p) p->DestroySelf();   }
     __declspec(dllexport) void __cdecl FreeOcvBuffer(PByte buf)             { delete[] buf;              }

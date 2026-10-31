@@ -1,9 +1,12 @@
 ﻿unit cv4d;
+{$WARN SYMBOL_PLATFORM OFF}
+
 {
   功能： opencv5.0 for Delphi
   作者： dbyoung@sina.com
   时间： 2026-10-01
   注意： HBITMAP2Mat 会将图像修改为 32bit 位图类型；只支持 24bit、32bit 位图图像类型；
+  注意：本模块仅处理 4 通道 BGRA 图像；输入限定为：CV_8UC4；
 }
 
 interface
@@ -45,12 +48,25 @@ type
   { ImgProc  图像处理类的接口 }
   OcvImgProc = class
   public
-    function GaussianBlur(src: OcvMat; ksize: Integer; sigmaX: Double): OcvMat;          virtual; cdecl; abstract;
-    function CvtColor(src: OcvMat; code: Integer): OcvMat;                               virtual; cdecl; abstract;
-    function InRange(src: OcvMat; lbB, lbG, lbR, lbA, ubB, ubG, ubR, ubA: Byte): OcvMat; virtual; cdecl; abstract;
-    function Erode(src: OcvMat; ksize, iterations: Integer): OcvMat;                     virtual; cdecl; abstract;
-    function Dilate(src: OcvMat; ksize, iterations: Integer): OcvMat;                    virtual; cdecl; abstract;
-    function FindContours(binary: OcvMat; mode, method: Integer): OcvContours;           virtual; cdecl; abstract;
+    function GaussianBlur(src: OcvMat; ksize: Integer; sigmaX: Double): OcvMat;                virtual; cdecl; abstract;
+    function Blur(src: OcvMat; ksize: Integer): OcvMat;                                        virtual; cdecl; abstract;
+    function BoxFilter(src: OcvMat; ksize: Integer; normalize: Boolean): OcvMat;               virtual; cdecl; abstract;
+    function MedianBlur(src: OcvMat; ksize: Integer): OcvMat;                                  virtual; cdecl; abstract;
+    function BilateralFilter(src: OcvMat; d: Integer; sigmaColor, sigmaSpace: Double): OcvMat; virtual; cdecl; abstract;
+    function CvtColor(src: OcvMat; code: Integer): OcvMat;                                     virtual; cdecl; abstract;
+    function InRange(src: OcvMat; lbB, lbG, lbR, lbA, ubB, ubG, ubR, ubA: Byte): OcvMat;       virtual; cdecl; abstract;
+    function Erode(src: OcvMat; ksize, iterations: Integer): OcvMat;                           virtual; cdecl; abstract;
+    function Dilate(src: OcvMat; ksize, iterations: Integer): OcvMat;                          virtual; cdecl; abstract;
+    function FindContours(binary: OcvMat; mode, method: Integer): OcvContours;                 virtual; cdecl; abstract;
+  end;
+
+  { Photo 图像摄影类的接口 }
+  OcvPhoto = class
+  public
+    function FastNlMeansDenoisingColored(src: OcvMat; h, hColor: Double; templateWindowSize, searchWindowSize: Integer): OcvMat; virtual; cdecl; abstract;
+    function FastNlMeansDenoising(src: OcvMat; h: Double; templateWindowSize, searchWindowSize: Integer): OcvMat;                virtual; cdecl; abstract;	
+    function DenoiseTVL1(src: OcvMat; lambda: Double; niters: Integer): OcvMat;                                                  virtual; cdecl; abstract;
+    function BM3DDenoising(src: OcvMat): OcvMat;                                                                                 virtual; cdecl; abstract;
   end;
 
   { c 语言风格导出的函数接口 }
@@ -58,30 +74,34 @@ type
   public
     function GetBuildInformation(var Len: Integer): PByte; virtual; cdecl; abstract;
     function GetVersionString(var Len: Integer): PByte;    virtual; cdecl; abstract;
-	function HBITMAP2Mat(hBmp: HBITMAP): OcvMat;           virtual; cdecl; abstract;
+    function HBITMAP2Mat(hBmp: HBITMAP): OcvMat;           virtual; cdecl; abstract;
   end;
 
 const c_strOpenCV4DelphiDllName = 'cv4d.dll';
 
 { Mat 接口类的创建和销毁函数 }
-function CreateOcvMat(rows, cols, matType: Integer): OcvMat; cdecl; external c_strOpenCV4DelphiDllName name 'CreateOcvMat';
-procedure DestroyOcvMat(p: OcvMat);                          cdecl; external c_strOpenCV4DelphiDllName name 'DestroyOcvMat';
+function CreateOcvMat(rows, cols, matType: Integer): OcvMat; cdecl; external c_strOpenCV4DelphiDllName delayed name 'CreateOcvMat';
+procedure DestroyOcvMat(p: OcvMat);                          cdecl; external c_strOpenCV4DelphiDllName delayed name 'DestroyOcvMat';
 
 { Contours 接口类的创建和销毁函数 }
-procedure DestroyOcvContours(p: OcvContours);   cdecl; external c_strOpenCV4DelphiDllName name 'DestroyOcvContours';
+procedure DestroyOcvContours(p: OcvContours);   cdecl; external c_strOpenCV4DelphiDllName delayed  name 'DestroyOcvContours';
 
 { ImgCodecs 接口类的创建和销毁函数 }
-function CreateOcvImgCodecs: OcvImgCodecs;      cdecl; external c_strOpenCV4DelphiDllName name 'CreateOcvImgCodecs';
-procedure DestroyOcvImgCodecs(p: OcvImgCodecs); cdecl; external c_strOpenCV4DelphiDllName name 'DestroyOcvImgCodecs';
+function CreateOcvImgCodecs: OcvImgCodecs;      cdecl; external c_strOpenCV4DelphiDllName delayed name 'CreateOcvImgCodecs';
+procedure DestroyOcvImgCodecs(p: OcvImgCodecs); cdecl; external c_strOpenCV4DelphiDllName delayed name 'DestroyOcvImgCodecs';
 
 { ImgProc 接口类的创建和销毁函数 }
-function  CreateOcvImgProc: OcvImgProc;     cdecl; external c_strOpenCV4DelphiDllName name 'CreateOcvImgProc';
-procedure DestroyOcvImgProc(p: OcvImgProc); cdecl; external c_strOpenCV4DelphiDllName name 'DestroyOcvImgProc';
+function  CreateOcvImgProc: OcvImgProc;     cdecl; external c_strOpenCV4DelphiDllName delayed name 'CreateOcvImgProc';
+procedure DestroyOcvImgProc(p: OcvImgProc); cdecl; external c_strOpenCV4DelphiDllName delayed name 'DestroyOcvImgProc';
 
+{ Photo 接口类的创建和销毁函数 }
+function  CreateOcvPhoto: OcvPhoto;     cdecl;  external c_strOpenCV4DelphiDllName delayed name 'CreateOcvPhoto';
+procedure DestroyOcvPhoto(p: OcvPhoto); cdecl;  external c_strOpenCV4DelphiDllName delayed name 'DestroyOcvPhoto';
+  
 { Core 接口类的创建和销毁函数 }
-function CreateOcvCore: OcvCore;      cdecl; external c_strOpenCV4DelphiDllName name 'CreateOcvCore';
-procedure DestroyOcvCore(p: OcvCore); cdecl; external c_strOpenCV4DelphiDllName name 'DestroyOcvCore';
-procedure FreeOcvBuffer(buf: PByte);  cdecl; external c_strOpenCV4DelphiDllName name 'FreeOcvBuffer';
+function CreateOcvCore: OcvCore;      cdecl; external c_strOpenCV4DelphiDllName delayed name 'CreateOcvCore';
+procedure DestroyOcvCore(p: OcvCore); cdecl; external c_strOpenCV4DelphiDllName delayed name 'DestroyOcvCore';
+procedure FreeOcvBuffer(buf: PByte);  cdecl; external c_strOpenCV4DelphiDllName delayed name 'FreeOcvBuffer';
 
 implementation
 
