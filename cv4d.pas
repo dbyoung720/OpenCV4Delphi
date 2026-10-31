@@ -1,6 +1,4 @@
 ﻿unit cv4d;
-{$WARN SYMBOL_PLATFORM OFF}
-
 {
   功能： opencv5.0 for Delphi
   作者： dbyoung@sina.com
