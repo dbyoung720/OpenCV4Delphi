@@ -3,8 +3,7 @@
   功能： opencv5.0 for Delphi
   作者： dbyoung@sina.com
   时间： 2026-10-01
-  注意： HBITMAP2Mat 会将图像修改为 32bit 位图类型；只支持 24bit、32bit 位图图像类型；
-  注意：本模块仅处理 4 通道 BGRA 图像；输入限定为：CV_8UC4；
+  注意： HBITMAP2Mat 会将图像修改为 32bit 位图类型；只支持 24bit、32bit 位图图像类型；本模块仅处理 4 通道 BGRA 图像；输入限定为：CV_8UC4；
 }
 
 interface
