@@ -80,28 +80,28 @@ type
 const c_strOpenCV4DelphiDllName = 'cv4d.dll';
 
 { Mat 接口类的创建和销毁函数 }
-function CreateOcvMat(rows, cols, matType: Integer): OcvMat; cdecl; external c_strOpenCV4DelphiDllName delayed name 'CreateOcvMat';
-procedure DestroyOcvMat(p: OcvMat);                          cdecl; external c_strOpenCV4DelphiDllName delayed name 'DestroyOcvMat';
+function CreateOcvMat(rows, cols, matType: Integer): OcvMat; cdecl; external c_strOpenCV4DelphiDllName name 'CreateOcvMat';
+procedure DestroyOcvMat(p: OcvMat);                          cdecl; external c_strOpenCV4DelphiDllName name 'DestroyOcvMat';
 
 { Contours 接口类的创建和销毁函数 }
-procedure DestroyOcvContours(p: OcvContours);   cdecl; external c_strOpenCV4DelphiDllName delayed  name 'DestroyOcvContours';
+procedure DestroyOcvContours(p: OcvContours);   cdecl; external c_strOpenCV4DelphiDllName name 'DestroyOcvContours';
 
 { ImgCodecs 接口类的创建和销毁函数 }
-function CreateOcvImgCodecs: OcvImgCodecs;      cdecl; external c_strOpenCV4DelphiDllName delayed name 'CreateOcvImgCodecs';
-procedure DestroyOcvImgCodecs(p: OcvImgCodecs); cdecl; external c_strOpenCV4DelphiDllName delayed name 'DestroyOcvImgCodecs';
+function CreateOcvImgCodecs: OcvImgCodecs;      cdecl; external c_strOpenCV4DelphiDllName name 'CreateOcvImgCodecs';
+procedure DestroyOcvImgCodecs(p: OcvImgCodecs); cdecl; external c_strOpenCV4DelphiDllName name 'DestroyOcvImgCodecs';
 
 { ImgProc 接口类的创建和销毁函数 }
-function  CreateOcvImgProc: OcvImgProc;     cdecl; external c_strOpenCV4DelphiDllName delayed name 'CreateOcvImgProc';
-procedure DestroyOcvImgProc(p: OcvImgProc); cdecl; external c_strOpenCV4DelphiDllName delayed name 'DestroyOcvImgProc';
+function  CreateOcvImgProc: OcvImgProc;     cdecl; external c_strOpenCV4DelphiDllName name 'CreateOcvImgProc';
+procedure DestroyOcvImgProc(p: OcvImgProc); cdecl; external c_strOpenCV4DelphiDllName name 'DestroyOcvImgProc';
 
 { Photo 接口类的创建和销毁函数 }
-function  CreateOcvPhoto: OcvPhoto;     cdecl;  external c_strOpenCV4DelphiDllName delayed name 'CreateOcvPhoto';
-procedure DestroyOcvPhoto(p: OcvPhoto); cdecl;  external c_strOpenCV4DelphiDllName delayed name 'DestroyOcvPhoto';
+function  CreateOcvPhoto: OcvPhoto;     cdecl;  external c_strOpenCV4DelphiDllName name 'CreateOcvPhoto';
+procedure DestroyOcvPhoto(p: OcvPhoto); cdecl;  external c_strOpenCV4DelphiDllName name 'DestroyOcvPhoto';
   
 { Core 接口类的创建和销毁函数 }
-function CreateOcvCore: OcvCore;      cdecl; external c_strOpenCV4DelphiDllName delayed name 'CreateOcvCore';
-procedure DestroyOcvCore(p: OcvCore); cdecl; external c_strOpenCV4DelphiDllName delayed name 'DestroyOcvCore';
-procedure FreeOcvBuffer(buf: PByte);  cdecl; external c_strOpenCV4DelphiDllName delayed name 'FreeOcvBuffer';
+function CreateOcvCore: OcvCore;      cdecl; external c_strOpenCV4DelphiDllName name 'CreateOcvCore';
+procedure DestroyOcvCore(p: OcvCore); cdecl; external c_strOpenCV4DelphiDllName name 'DestroyOcvCore';
+procedure FreeOcvBuffer(buf: PByte);  cdecl; external c_strOpenCV4DelphiDllName name 'FreeOcvBuffer';
 
 implementation
 
